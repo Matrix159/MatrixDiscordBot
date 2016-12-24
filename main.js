@@ -146,16 +146,13 @@ const commands = {
         }
     },
     "owgametime": {
-        argsDesc: "[Overwatch battle-tag in the form Example-4444 (Case sensitive)]",
-        desc: "Retrieves your Overwatch quick time hours.",
+        argsDesc: "[Example-4444 quickplay]",
+        desc: "Retrieves your Overwatch quick time hours. Battle-tag is case sensitive",
         process: function (bot, msg, args) {
             console.log(args);
             args = args.trim();
             args = args.split(" ");
-            log(args);
-            if (args && args[0]) {
-                console.log(args && args[0]);
-                console.log(args[0]);
+            if (args && args.length == 2) {
                 request
                     .get(`https://owapi.net/api/v3/u/${args[0]}/blob`)
                     .end(function (err, res) {
@@ -164,49 +161,47 @@ const commands = {
                             console.log(res.body);
                             let quickplay;
                             try {
-                                quickplay = res.body.us.heroes.playtime.quickplay;
+                                log(typeof res.body.us);
+                                if (res.body.us !== null) {
+                                    quickplay = res.body.us.heroes.playtime[args[1]];
+                                }
+                                else if (res.body.eu !== null) {
+                                    quickplay = res.body.eu.heroes.playtime[args[1]];
+                                }
+                                else if (res.body.kr !== null) {
+                                    quickplay = res.body.kr.heroes.playtime[args[1]];
+                                }
+                                else {
+                                    quickplay = res.body.any.heroes.playtime[args[1]];
+                                }
                             }
                             catch (err) {
                                 console.log(err);
-                                msg.reply("There was an error with the request, check your battle-tag for correct case sensitivity.");
+                                msg.reply("There was an error with the request, check your battle-tag for correct case sensitivity and format.");
                                 return;
                             }
                             if (quickplay) {
                                 let messageToSend = "\nYour Quick Play game time per hero:\n";
-                                /*for (let key in quickplay) {
+
+                                let sortable = [];
+                                for (let key in quickplay) {
                                     if (quickplay.hasOwnProperty(key)) {
-                                        messageToSend += `\n[${quickplay[key]} hours on ${key}]`;
-                                        console.log(key + " -> " + quickplay[key]);
+                                        // each item is an array in format [key, value]
+                                        sortable.push([key, quickplay[key]]);
                                     }
-                                }*/
-                                let sortable=[];
-                                for(let key in quickplay)
-                                    if(quickplay.hasOwnProperty(key))
-                                        sortable.push([key, quickplay[key]]); // each item is an array in format [key, value]
+                                }
 
                                 // sort items by value
-                                sortable.sort(function(a, b)
-                                {
-                                    return b[1] - a[1]; // compare numbers
+                                sortable.sort(function (a, b) {
+                                    return b[1] - a[1];
                                 });
-                                for(let arr of sortable)
-                                {
-                                    log(arr);
-                                    if(arr[1] < 1)
-                                    {
+                                for (let arr of sortable) {
+                                    if (arr[1] < 1) {
                                         arr[1] = arr[1].toFixed(1);
                                     }
                                     messageToSend += `\n[${arr[1]} hours on ${arr[0]}]`;
-                                    //console.log(key + " -> " + quickplay[key]);
                                 }
-                                /*let sortedArray = Object.keys(quickplay).sort();
-                                for(let key of sortedArray)
-                                {
-                                   if(quickplay.hasOwnProperty(key))
-                                   {
 
-                                   }
-                                }*/
                                 msg.reply(messageToSend);
                             }
                         }
