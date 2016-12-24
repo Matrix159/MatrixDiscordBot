@@ -81,8 +81,8 @@
       <file leaf-file-name="Procfile.txt" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Procfile.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="20" lean-forward="true" selection-start-line="0" selection-start-column="20" selection-end-line="0" selection-end-column="20" />
+            <state relative-caret-position="50">
+              <caret line="2" column="0" lean-forward="true" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -336,7 +336,7 @@
       <workItem from="1482371062580" duration="5566000" />
       <workItem from="1482464193316" duration="481000" />
       <workItem from="1482524359652" duration="16302000" />
-      <workItem from="1482555090198" duration="1798000" />
+      <workItem from="1482555090198" duration="2920000" />
     </task>
     <task id="LOCAL-00001" summary="asdasdas">
       <created>1480656339793</created>
@@ -370,7 +370,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="49544000" />
+    <option name="totallyTimeSpent" value="50666000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="950" y="0" width="980" height="1230" extended-state="0" />
@@ -707,8 +707,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Procfile.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="20" lean-forward="true" selection-start-line="0" selection-start-column="20" selection-end-line="0" selection-end-column="20" />
+        <state relative-caret-position="50">
+          <caret line="2" column="0" lean-forward="true" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
           <folding />
         </state>
       </provider>
