@@ -181,7 +181,7 @@ const commands = {
                                 return;
                             }
                             if (quickplay) {
-                                let messageToSend = "\nYour Quick Play game time per hero:\n";
+                                let messageToSend = `\nYour ${args[1]} game time per hero:\n`;
 
                                 let sortable = [];
                                 for (let key in quickplay) {
