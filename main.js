@@ -212,6 +212,14 @@ const commands = {
                     });
             }
         }
+    },
+    "cookie" : {
+        argsDesc: false,
+        desc: "Give le cookie.",
+        process: function(bot, msg)
+        {
+            msg.channel.sendMessage(":cookie:");
+        }
     }
 };
 
