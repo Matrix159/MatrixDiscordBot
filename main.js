@@ -143,12 +143,13 @@ const commands = {
         }
     },
     "owgametime": {
-        argsDesc: "[Example-4444 quickplay]",
-        desc: "Retrieves your Overwatch quick time hours. Battle-tag is case sensitive",
+        argsDesc: "[Example#4444 quickplay]",
+        desc: "Retrieves your Overwatch in-game hours per hero. Battle-tag is case sensitive",
         process: function (bot, msg, args) {
             args = args.trim();
             args = args.split(" ");
             if (args && args.length == 2) {
+                args[0] = args[0].replace("#", "-");
                 request
                     .get(`https://owapi.net/api/v3/u/${args[0]}/blob`)
                     .end(function (err, res) {
@@ -198,7 +199,7 @@ const commands = {
                                 }
 
                                 msg.reply(messageToSend)
-                                    .then(msg => console.log(`Sent a reply to ${msg.author}`))
+                                    .then(msg => console.log(`Sent a reply to ${msg.author.username}`))
                                     .catch(console.error);
                             }
                         }
@@ -210,11 +211,58 @@ const commands = {
             }
         }
     },
-    "cookie" : {
+    "owstats": {
+        argsDesc: "temp",
+        desc: "Look up certain stats about your Overwatch account.",
+        process: function (bot, msg, args) {
+            args = args.trim();
+            args = args.split(" ");
+            if (args && args.length == 2) {
+                args[0] = args[0].replace("#", "-");
+                request
+                    .get(`https://owapi.net/api/v3/u/${args[0]}/blob`)
+                    .end(function (err, res) {
+                        // Do something
+                        if (!err && res.statusCode == 200) {
+                            let stats;
+                            try {
+                                log(typeof res.body.us);
+                                if (res.body.us !== null) {
+                                    stats = res.body.us.stats[args[1]].average_stats;
+                                }
+                                else if (res.body.eu !== null) {
+                                    stats = res.body.eu.stats[args[1]].average_stats;
+                                }
+                                else if (res.body.kr !== null) {
+                                    stats = res.body.kr.stats[args[1]].average_stats;
+                                }
+                                else {
+                                    stats = res.body.any.stats[args[1]].average_stats;
+                                }
+                            }
+                            catch (err) {
+                                logErr(err);
+                                msg.reply("There was an error with the request, check your battle-tag for correct case sensitivity and format.");
+                                return;
+                            }
+                            if (stats) {
+                                msg.channel.sendCode("javascript", JSON.stringify(stats).replace(/[{},]/g,"\n"))
+                                    .then(msg => console.log(`Sent a reply to ${msg.author.username}`))
+                                    .catch(console.error);
+                            }
+                        }
+                        else {
+                            logErr(err);
+                            logErr("OW status code " + res.statusCode);
+                        }
+                    });
+            }
+        }
+    },
+    "cookie": {
         argsDesc: false,
         desc: "Give le cookie.",
-        process: function(bot, msg)
-        {
+        process: function (bot, msg) {
             msg.channel.sendMessage(":cookie:")
                 .then(message => console.log(`Sent message: ${message.content}`))
                 .catch(console.error);
