@@ -51,9 +51,6 @@ client.on('disconnected', () => {
     log("Client disconnected!");
     process.exit(-1);
 });
-client.on("typingStart", (channel, user) => {
-    log(`${user.username} started typing in channel ${channel.id}`);
-});
 client.login(BOT_TOKEN);
 
 
@@ -149,7 +146,6 @@ const commands = {
         argsDesc: "[Example-4444 quickplay]",
         desc: "Retrieves your Overwatch quick time hours. Battle-tag is case sensitive",
         process: function (bot, msg, args) {
-            console.log(args);
             args = args.trim();
             args = args.split(" ");
             if (args && args.length == 2) {
@@ -158,7 +154,6 @@ const commands = {
                     .end(function (err, res) {
                         // Do something
                         if (!err && res.statusCode == 200) {
-                            console.log(res.body);
                             let quickplay;
                             try {
                                 log(typeof res.body.us);
@@ -176,7 +171,7 @@ const commands = {
                                 }
                             }
                             catch (err) {
-                                console.log(err);
+                                logErr(err);
                                 msg.reply("There was an error with the request, check your battle-tag for correct case sensitivity and format.");
                                 return;
                             }
@@ -202,12 +197,14 @@ const commands = {
                                     messageToSend += `\n[${arr[1]} hours on ${arr[0]}]`;
                                 }
 
-                                msg.reply(messageToSend);
+                                msg.reply(messageToSend)
+                                    .then(msg => console.log(`Sent a reply to ${msg.author}`))
+                                    .catch(console.error);
                             }
                         }
                         else {
-                            console.log(err);
-                            console.log("OW status code " + res.statusCode);
+                            logErr(err);
+                            logErr("OW status code " + res.statusCode);
                         }
                     });
             }
@@ -218,7 +215,9 @@ const commands = {
         desc: "Give le cookie.",
         process: function(bot, msg)
         {
-            msg.channel.sendMessage(":cookie:");
+            msg.channel.sendMessage(":cookie:")
+                .then(message => console.log(`Sent message: ${message.content}`))
+                .catch(console.error);
         }
     }
 };
@@ -331,13 +330,10 @@ function checkCmd(msg) {
         return;
     }
     const words = msg.content.split(" ");
-    log(words);
     if (words[0].charAt(0) != '!') {
-        log("ignored");
         return;
     }
     const cmd = commands[words[0].substring(1)];
-    log(cmd);
     if (cmd) {
         var args = msg.content.substring(words[0].length);
         cmd.process(client, msg, args);
