@@ -279,7 +279,9 @@ const commands = {
         process: function (bot, msg, args) {
             log(args);
             cbot.ask(args, function (err, response) {
-                msg.channel.sendMessage(response);
+                msg.channel.sendMessage(response)
+                    .then(message => console.log(`Sent message: ${message.content}`))
+                    .catch(console.error);
             });
         }
     }
