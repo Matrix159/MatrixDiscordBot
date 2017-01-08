@@ -12,7 +12,9 @@ const ytdl = require('ytdl-core');
 const request = require('superagent');
 // Used for parsing urls
 const url = require('url');
-
+const cleverbot = require("cleverbot.io");
+const cbot = new cleverbot("LpxSxzKNawYCf7wQ", "f6C1KgLdIoIsej6XRZdiB7UCXqm8K61O");
+cbot.setNick("MatrixBot");
 function log(msg) {
     console.log(msg);
 }
@@ -37,6 +39,9 @@ let playQueue = [];
 client.on('ready', () => {
     log(`Logged in as ${client.user.username}#${client.user.discriminator} (${client.readyAt})`);
     client.syncGuilds();
+    cbot.create((err, session) => {
+        log(session + " created");
+    });
 
 });
 
@@ -246,7 +251,7 @@ const commands = {
                                 return;
                             }
                             if (stats) {
-                                msg.channel.sendCode("javascript", JSON.stringify(stats).replace(/[{},]/g,"\n"))
+                                msg.channel.sendCode("javascript", JSON.stringify(stats).replace(/[{},]/g, "\n"))
                                     .then(msg => console.log(`Sent a reply to ${msg.author.username}`))
                                     .catch(console.error);
                             }
@@ -266,6 +271,16 @@ const commands = {
             msg.channel.sendMessage(":cookie:")
                 .then(message => console.log(`Sent message: ${message.content}`))
                 .catch(console.error);
+        }
+    },
+    "ask": {
+        argsDesc: "[Message to say to the bot]",
+        desc: "Oh god.",
+        process: function (bot, msg, args) {
+            log(args);
+            cbot.ask(args, function (err, response) {
+                msg.channel.sendMessage(response);
+            });
         }
     }
 };

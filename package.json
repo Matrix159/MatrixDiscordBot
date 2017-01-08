@@ -4,6 +4,7 @@
   "description": "Matrix's Discord Bot",
   "main": "main.js",
   "dependencies": {
+    "cleverbot.io": "^1.0.4",
     "discord.js": "latest",
     "moment": "^2.17.0",
     "node-opus": "latest",
