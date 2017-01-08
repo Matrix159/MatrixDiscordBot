@@ -49,6 +49,17 @@ client.on('message', msg => {
     if (msg.author.bot) {
         return;
     }
+    if(msg.isMentioned(client.user))
+    {
+        let messageToAsk = msg.content.replace(/[<][@]([0-9])+[>]/g, "").trim();
+        cbot.ask(messageToAsk, function (err, response) {
+            msg.channel.sendMessage(response)
+                .then(message => console.log(`Sent message: ${message.content}`))
+                .catch(console.error);
+        });
+
+        log("Bot was mentioned");
+    }
     checkCmd(msg);
 });
 
@@ -271,18 +282,6 @@ const commands = {
             msg.channel.sendMessage(":cookie:")
                 .then(message => console.log(`Sent message: ${message.content}`))
                 .catch(console.error);
-        }
-    },
-    "ask": {
-        argsDesc: "[Message to say to the bot]",
-        desc: "Oh god.",
-        process: function (bot, msg, args) {
-            log(args);
-            cbot.ask(args, function (err, response) {
-                msg.channel.sendMessage(response)
-                    .then(message => console.log(`Sent message: ${message.content}`))
-                    .catch(console.error);
-            });
         }
     }
 };
