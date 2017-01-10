@@ -33,6 +33,8 @@ let YoutubeVideo = require('./model/YoutubeVideo.js');
 let boundTextChannel;
 let boundVoiceChannel;
 let voiceStreamDispatcher;
+let volumeLevel;
+let skipVotes = 0;
 // Queue for youtube videos
 let playQueue = [];
 
@@ -49,8 +51,7 @@ client.on('message', msg => {
     if (msg.author.bot) {
         return;
     }
-    if(msg.isMentioned(client.user))
-    {
+    if (msg.isMentioned(client.user)) {
         let messageToAsk = msg.content.replace(/[<][@]([0-9])+[>]/g, "").trim();
         cbot.ask(messageToAsk, function (err, response) {
             msg.channel.sendMessage(response)
@@ -140,6 +141,27 @@ const commands = {
         process: function (bot, msg, args) {
             log('resume');
             resumePlayback(msg);
+        }
+    },
+    "skip": {
+        argsDesc: false,
+        desc: "Skips the current song.",
+        process: function (bot, msg, args) {
+
+            if (voiceStreamDispatcher) {
+                skipVotes += 1;
+                if(skipVotes === 3) {
+                    if(boundTextChannel)
+                    boundTextChannel.sendMessage(`**Skipping...**`);
+                    voiceStreamDispatcher.end();
+                    skipVotes = 0;
+                }
+                else
+                {
+                    if(boundTextChannel)
+                        boundTextChannel.sendMessage("**I need " + (3 - skipVotes) + " more votes to skip the current song**");
+                }
+            }
         }
     },
     "eval": {
@@ -283,6 +305,14 @@ const commands = {
                 .then(message => console.log(`Sent message: ${message.content}`))
                 .catch(console.error);
         }
+    },
+    "volume": {
+        argsDesc: "[.25]",
+        desc: "Changes the bot's volume level in a voice channel.",
+        process: function (bot, msg, args) {
+            if (!(isNaN(Number(args))))
+                changeVoiceVolume(Number(args));
+        }
     }
 };
 
@@ -336,7 +366,10 @@ function playNext() {
         const length = next.length();
         const link = next.link();
         const stream = ytdl.downloadFromInfo(next.info, {audioonly: true});
-        voiceStreamDispatcher = boundVoiceChannel.connection.playStream(stream);
+        if (!volumeLevel) {
+            volumeLevel = .25;
+        }
+        voiceStreamDispatcher = boundVoiceChannel.connection.playStream(stream, {volume: volumeLevel});
         voiceStreamDispatcher.once('end', () => {
             log(`track '${title}' ended`);
             voiceStreamDispatcher = undefined;
@@ -369,6 +402,12 @@ function resumePlayback(msg) {
     }
 }
 
+function changeVoiceVolume(volume) {
+    volumeLevel = volume;
+    if (voiceStreamDispatcher) {
+        voiceStreamDispatcher.setVolume(volumeLevel);
+    }
+}
 function getYoutubeSearchURL(query) {
     return `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURI(query.trim())}&key=${YT_API_KEY}`;
 }
