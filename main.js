@@ -60,6 +60,7 @@ client.on('message', msg => {
     }
     if (msg.isMentioned(client.user)) {
         let messageToAsk = msg.content.replace(/[<][@]([0-9])+[>]/g, "").trim();
+        log("Other bot: " + messageToAsk);
         cbot.ask(messageToAsk, function (err, response) {
             setTimeout(function(msg){
 
