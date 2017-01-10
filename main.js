@@ -64,13 +64,14 @@ client.on('message', msg => {
         cbot.ask(messageToAsk, function (err, response) {
             setTimeout(function(msg){
 
-                if(response.toLowerCase().includes(" my name is "))
+                if(response.toLowerCase().includes("my name is "))
                 {
-                    let n = response.toLowerCase().search(" my name is ");
+                    let n = response.toLowerCase().search("my name is ");
                     let array = response.toLowerCase().substring(n).trim().split(" ");
                     if(array.length >= 4) {
                         let name = array[3];
                         name = name[0].toUpperCase() + name.substr(1);
+                        name = name.replace(/[^a-zA-Z]+/g, '');
                         msg.guild.fetchMember("252878570274291712").then((guildMember) => guildMember.setNickname(name)).catch(console.error);
                         log(name);
                     }
