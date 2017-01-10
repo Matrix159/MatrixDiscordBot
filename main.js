@@ -14,6 +14,7 @@ const request = require('superagent');
 const url = require('url');
 const cleverbot = require("cleverbot.io");
 const cbot = new cleverbot("LpxSxzKNawYCf7wQ", "f6C1KgLdIoIsej6XRZdiB7UCXqm8K61O");
+
 cbot.setNick("MatrixBot");
 function log(msg) {
     console.log(msg);
@@ -48,18 +49,41 @@ client.on('ready', () => {
 });
 
 client.on('message', msg => {
-    if (msg.author.bot) {
+    /*if (msg.author.bot) {
         return;
+    }*/
+    if(msg.author.id === "159985870458322944")
+    {
+        msg.reply("Go away Mee6")
+            .then(message => console.log(`Sent message: ${message.content}`))
+            .catch(console.error);
     }
     if (msg.isMentioned(client.user)) {
         let messageToAsk = msg.content.replace(/[<][@]([0-9])+[>]/g, "").trim();
         cbot.ask(messageToAsk, function (err, response) {
-            msg.channel.sendMessage(response)
+            setTimeout(function(msg){
+
+                if(response.toLowerCase().includes(" my name is "))
+                {
+                    let n = response.toLowerCase().search(" my name is ");
+                    let array = response.toLowerCase().substring(n).trim().split(" ");
+                    if(array.length >= 4) {
+                        let name = array[3];
+                        name = name[0].toUpperCase() + name.substr(1);
+                        msg.guild.fetchMember("252878570274291712").then((guildMember) => guildMember.setNickname(name)).catch(console.error);
+                        log(name);
+                    }
+                }
+                msg.reply(response)
+                    .then(message => console.log(`Sent message: ${message.content}`))
+                    .catch(console.error);}, 3000, msg);
+            /*msg.reply(response)
                 .then(message => console.log(`Sent message: ${message.content}`))
-                .catch(console.error);
+                .catch(console.error);*/
         });
 
-        log("Bot was mentioned");
+        //@log("Bot was mentioned");
+        return;
     }
     checkCmd(msg);
 });
