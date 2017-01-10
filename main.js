@@ -38,7 +38,8 @@ let volumeLevel;
 let skipVotes = 0;
 // Queue for youtube videos
 let playQueue = [];
-
+let botNames = [];
+botNames.push("MatrixBot");
 client.on('ready', () => {
     log(`Logged in as ${client.user.username}#${client.user.discriminator} (${client.readyAt})`);
     client.syncGuilds();
@@ -72,6 +73,7 @@ client.on('message', msg => {
                         let name = array[3];
                         name = name[0].toUpperCase() + name.substr(1);
                         name = name.replace(/[^a-zA-Z]+/g, '');
+                        botNames.push(name);
                         msg.guild.fetchMember("252878570274291712").then((guildMember) => guildMember.setNickname(name)).catch(console.error);
                         log(name);
                     }
@@ -79,12 +81,8 @@ client.on('message', msg => {
                 msg.reply(response)
                     .then(message => console.log(`Sent message: ${message.content}`))
                     .catch(console.error);}, 3000, msg);
-            /*msg.reply(response)
-                .then(message => console.log(`Sent message: ${message.content}`))
-                .catch(console.error);*/
-        });
 
-        //@log("Bot was mentioned");
+        });
         return;
     }
     checkCmd(msg);
@@ -339,9 +337,21 @@ const commands = {
             if (!(isNaN(Number(args))))
                 changeVoiceVolume(Number(args));
         }
+    },
+    "names": {
+        argsDesc: false,
+        desc: "Lists the names this bot has identified as.",
+        process: function(bot, msg, args)
+        {
+            let botNameList = "";
+            for(let x of botNames)
+            {
+                botNameList += ("\n-" + x);
+            }
+            msg.channel.sendMessage(botNameList);
+        }
     }
 };
-
 function searchAndQueue(bot, msg, args, conn) {
     const searchURL = getYoutubeSearchURL(args);
     msg.reply('Searching...');
