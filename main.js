@@ -15,6 +15,7 @@ const url = require('url');
 const cleverbot = require("cleverbot.io");
 const cbot = new cleverbot("LpxSxzKNawYCf7wQ", "f6C1KgLdIoIsej6XRZdiB7UCXqm8K61O");
 
+
 cbot.setNick("MatrixBot");
 function log(msg) {
     console.log(msg);
@@ -39,7 +40,15 @@ let skipVotes = 0;
 // Queue for youtube videos
 let playQueue = [];
 let botNames = [];
-botNames.push("MatrixBot");
+let killCleverbot = false;
+const firebase = require('./FirebaseWrapper');
+
+firebase.database.ref('names/').on('value', (snapshot) => {
+    console.log(snapshot.val());
+    botNames = snapshot.val();
+});
+
+//botNames.push("MatrixBot");
 client.on('ready', () => {
     log(`Logged in as ${client.user.username}#${client.user.discriminator} (${client.readyAt})`);
     client.syncGuilds();
@@ -51,39 +60,42 @@ client.on('ready', () => {
 
 client.on('message', msg => {
     /*if (msg.author.bot) {
-        return;
-    }*/
-    if(msg.author.id === "159985870458322944")
-    {
+     return;
+     }*/
+    if (msg.author.id === "159985870458322944") {
         msg.reply("Go away Mee6")
             .then(message => console.log(`Sent message: ${message.content}`))
             .catch(console.error);
     }
     if (msg.isMentioned(client.user)) {
-        let messageToAsk = msg.content.replace(/[<][@]([0-9])+[>]/g, "").trim();
-        log("Other bot: " + messageToAsk);
-        cbot.ask(messageToAsk, function (err, response) {
-            setTimeout(function(msg){
-
-                if(response.toLowerCase().includes("my name is "))
-                {
-                    let n = response.toLowerCase().search("my name is ");
-                    let array = response.toLowerCase().substring(n).trim().split(" ");
-                    if(array.length >= 4) {
-                        let name = array[3];
-                        name = name[0].toUpperCase() + name.substr(1);
-                        name = name.replace(/[^a-zA-Z]+/g, '');
-                        botNames.push(name);
-                        msg.guild.fetchMember("252878570274291712").then((guildMember) => guildMember.setNickname(name)).catch(console.error);
-                        log(name);
+        if (!killCleverbot) {
+            let messageToAsk = msg.content.replace(/[<][@]([0-9])+[>]/g, "").trim();
+            log("Other bot: " + messageToAsk);
+            cbot.ask(messageToAsk, function (err, response) {
+                setTimeout(function (msg) {
+                    if (!killCleverbot) {
+                        if (response.toLowerCase().includes("my name is ")) {
+                            let n = response.toLowerCase().search("my name is ");
+                            let array = response.toLowerCase().substring(n).trim().split(" ");
+                            if (array.length >= 4) {
+                                let name = array[3];
+                                name = name[0].toUpperCase() + name.substr(1);
+                                name = name.replace(/[^a-zA-Z]+/g, '');
+                                botNames.push(name);
+                                firebase.writeNames(botNames);
+                                msg.guild.fetchMember("252878570274291712").then((guildMember) => guildMember.setNickname(name)).catch(console.error);
+                                log(name);
+                            }
+                        }
+                        msg.reply(response)
+                            .then(message => console.log(`Sent message: ${message.content}`))
+                            .catch(console.error);
                     }
-                }
-                msg.reply(response)
-                    .then(message => console.log(`Sent message: ${message.content}`))
-                    .catch(console.error);}, 3000, msg);
+                }, 3000, msg);
 
-        });
-        return;
+            });
+            return;
+        }
     }
     checkCmd(msg);
 });
@@ -174,15 +186,14 @@ const commands = {
 
             if (voiceStreamDispatcher) {
                 skipVotes += 1;
-                if(skipVotes === 3) {
-                    if(boundTextChannel)
-                    boundTextChannel.sendMessage(`**Skipping...**`);
+                if (skipVotes === 3) {
+                    if (boundTextChannel)
+                        boundTextChannel.sendMessage(`**Skipping...**`);
                     voiceStreamDispatcher.end();
                     skipVotes = 0;
                 }
-                else
-                {
-                    if(boundTextChannel)
+                else {
+                    if (boundTextChannel)
                         boundTextChannel.sendMessage("**I need " + (3 - skipVotes) + " more votes to skip the current song**");
                 }
             }
@@ -341,14 +352,22 @@ const commands = {
     "names": {
         argsDesc: false,
         desc: "Lists the names this bot has identified as.",
-        process: function(bot, msg, args)
-        {
+        process: function (bot, msg, args) {
             let botNameList = "";
-            for(let x of botNames)
-            {
+            for (let x of botNames) {
                 botNameList += ("\n-" + x);
             }
             msg.channel.sendMessage(botNameList);
+        }
+    },
+    "kill": {
+        argsDesc: false,
+        desc: "Kills the bot so it stops spamming cleverbot crap.",
+        process: function (bot, msg, args) {
+            killCleverbot = true;
+            setTimeout(function () {
+                killCleverbot = false;
+            }, 10000);
         }
     }
 };
