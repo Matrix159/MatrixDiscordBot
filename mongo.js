@@ -23,7 +23,9 @@ function setup(callback) {
             {
                 updateNames: updateNames,
                 closeDatabase: closeDatabase,
-                getNames: getNames
+                getNames: getNames,
+                addQuote: addQuote,
+                getQuotes: getQuotes
             });
     });
 
@@ -41,6 +43,33 @@ function updateNames(botNames) {
                 });
     });
 
+}
+
+function addQuote(quote) {
+    return new Promise((resolve, reject) => {
+        collection.updateOne({name: "matrixbot"},
+            {$push: {quotes: quote}}
+            , function (err, result) {
+                if (err)
+                    reject(err);
+                else
+                    resolve(result);
+            });
+    });
+
+}
+function getQuotes()
+{
+    return new Promise(
+        function (resolve, reject) {
+            collection.findOne({name: "matrixbot"}, function (err, doc) {
+                if (err)
+                    reject(err);
+                else
+                    resolve(doc.quotes);
+            })
+        }
+    );
 }
 function getNames() {
     return new Promise(

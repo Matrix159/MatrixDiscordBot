@@ -63,8 +63,7 @@ module.exports = function (db) {
                 let messageToAsk = msg.content.replace(/[<][@]([0-9])+[>]/g, "").trim();
                 log("Other bot: " + messageToAsk);
                 cbot.ask(messageToAsk, function (err, response) {
-                    if(err)
-                    {
+                    if (err) {
                         log(err);
                         return;
                     }
@@ -107,6 +106,38 @@ module.exports = function (db) {
 
 
     const commands = {
+        "info": {
+            argsDesc: false,
+            desc: "Displays bot info.",
+            process: function (bot, msg, args) {
+                msg.channel.sendMessage("", {
+                    embed: {
+                        color: 16711680,
+                        author: {
+                            name: bot.user.username,
+                            icon_url: bot.user.avatarURL
+                        },
+                        //url: 'http://google.com',
+                        description: 'MatrixBot will kick your ass with amazing goodness.',
+                        fields: [
+                            {
+                                name: 'Version',
+                                value: 'Forever beta meta'
+                            },
+                            {
+                                name: 'Commands',
+                                value: 'Type !help to get a list of commands'
+                            },
+                            {
+                                name: 'Requests',
+                                value: 'You want something added to the bot? Pay Matrix159 $100 and he will consider it'
+                            }
+                        ],
+                        timestamp: new Date(),
+                    }
+                });
+            }
+        },
         "say": {
             argsDesc: "[message]",
             desc: "Speak as MatrixBot.",
@@ -367,6 +398,39 @@ module.exports = function (db) {
                 setTimeout(function () {
                     killCleverbot = false;
                 }, 10000);
+            }
+        },
+        "quote": {
+            argsDesc: "[quote content] [author name]",
+            desc: "Use this command to store a quote.",
+            process: function (bot, msg, args) {
+                args = args.trim();
+                args = args.match(/\[(.*?)\]/g);
+                for (let x in args) {
+                    args[x] = args[x].replace("[", "").replace("]", "");
+                    log(args[x]);
+                }
+                if (args && args.length == 2) {
+
+                    database.addQuote({
+                        content: args[0],
+                        author: args[1]
+                    }).then((result) => log("Quote added")).catch(console.error);
+                }
+            }
+        },
+        "quotes": {
+            argsDesc: false,
+            desc: "Retrieves the list of quotes.",
+            process: function (bot, msg, args) {
+                let message = "";
+                database.getQuotes().then((quotes) => {
+                    for (let x of quotes) {
+                        message += `"${x.content}" - ${x.author}\n`;
+                    }
+                    msg.channel.sendMessage(message);
+                }).catch(console.error);
+
             }
         }
     };
