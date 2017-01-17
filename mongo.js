@@ -59,5 +59,3 @@ function closeDatabase() {
 }
 
 module.exports.setup = setup;
-//module.exports.updateNames = updateNames;
-//module.exports.closeDatabase = closeDatabase;

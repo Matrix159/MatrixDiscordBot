@@ -14,6 +14,7 @@ module.exports = function (db) {
     const url = require('url');
     const cleverbot = require("cleverbot.io");
     const cbot = new cleverbot("LpxSxzKNawYCf7wQ", "f6C1KgLdIoIsej6XRZdiB7UCXqm8K61O");
+    cbot.setNick("Matrix159");
     function log(msg) {
         console.log(msg);
     }
@@ -44,6 +45,7 @@ module.exports = function (db) {
         log(`Logged in as ${client.user.username}#${client.user.discriminator} (${client.readyAt})`);
         client.syncGuilds();
         cbot.create((err, session) => {
+            console.log("Created " + session);
         });
     });
 
@@ -61,6 +63,11 @@ module.exports = function (db) {
                 let messageToAsk = msg.content.replace(/[<][@]([0-9])+[>]/g, "").trim();
                 log("Other bot: " + messageToAsk);
                 cbot.ask(messageToAsk, function (err, response) {
+                    if(err)
+                    {
+                        log(err);
+                        return;
+                    }
                     setTimeout(function (msg) {
                         if (!killCleverbot) {
                             if (response.toLowerCase().includes("my name is ")) {
