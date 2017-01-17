@@ -4,13 +4,13 @@ module.exports = function (db) {
     const BOT_TOKEN = process.env.BOT_TOKEN;
     const Discord = require("discord.js");
     const client = new Discord.Client();
-// File system
+    // File system
     const fs = require('fs');
-// Youtube downloader
+    // Youtube downloader
     const ytdl = require('ytdl-core');
-// Used for http requests
+    // Used for http requests
     const request = require('superagent');
-// Used for parsing urls
+    // Used for parsing urls
     const url = require('url');
     const cleverbot = require("cleverbot.io");
     const cbot = new cleverbot("LpxSxzKNawYCf7wQ", "f6C1KgLdIoIsej6XRZdiB7UCXqm8K61O");
@@ -26,7 +26,7 @@ module.exports = function (db) {
     log("MatrixBot ver " + ver);
     checkEnv();
 
-// Model for a youtube video
+    // Model for a youtube video
     let YoutubeVideo = require('./model/YoutubeVideo.js');
 
     let boundTextChannel;
@@ -34,7 +34,7 @@ module.exports = function (db) {
     let voiceStreamDispatcher;
     let volumeLevel;
     let skipVotes = 0;
-// Queue for youtube videos
+    // Queue for youtube videos
     let playQueue = [];
     let killCleverbot = false;
     let database = db;
@@ -229,6 +229,14 @@ module.exports = function (db) {
                 }
             }
         },
+        "volume": {
+            argsDesc: "[.25]",
+            desc: "Changes the bot's volume level in a voice channel.",
+            process: function (bot, msg, args) {
+                if (!(isNaN(Number(args))))
+                    changeVoiceVolume(Number(args));
+            }
+        },
         "eval": {
             argsDesc: "[Javascript code to evaluate and run]",
             desc: "Evaluates and runs javascript code (Bot owner only)",
@@ -369,14 +377,6 @@ module.exports = function (db) {
                 msg.channel.sendMessage(":cookie:")
                     .then(message => console.log(`Sent message: ${message.content}`))
                     .catch(console.error);
-            }
-        },
-        "volume": {
-            argsDesc: "[.25]",
-            desc: "Changes the bot's volume level in a voice channel.",
-            process: function (bot, msg, args) {
-                if (!(isNaN(Number(args))))
-                    changeVoiceVolume(Number(args));
             }
         },
         "names": {
