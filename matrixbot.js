@@ -6,15 +6,23 @@ module.exports = function (db) {
     const client = new Discord.Client();
     // File system
     const fs = require('fs');
+    const jsonfile = require('jsonfile');
+    const sessionFile = './session.json';
+    const session = jsonfile.readFileSync(sessionFile);
+    log(session);
     // Youtube downloader
     const ytdl = require('ytdl-core');
     // Used for http requests
     const request = require('superagent');
+
+    // Giphy
+    const giphy = require('giphy-api')('dc6zaTOxFJmzC');
     // Used for parsing urls
     const url = require('url');
     const cleverbot = require("cleverbot.io");
     const cbot = new cleverbot("LpxSxzKNawYCf7wQ", "f6C1KgLdIoIsej6XRZdiB7UCXqm8K61O");
-    cbot.setNick("Matrix159");
+    let sessionname = session.sessionName;
+    cbot.setNick(sessionname);
     function log(msg) {
         console.log(msg);
     }
@@ -45,25 +53,34 @@ module.exports = function (db) {
         log(`Logged in as ${client.user.username}#${client.user.discriminator} (${client.readyAt})`);
         client.syncGuilds();
         cbot.create((err, session) => {
-            console.log("Created " + session);
+            log("Created " + session);
         });
-    });
 
+    });
+    /*client.on("presenceUpdate", (oldMember, newMember) => {
+     if(newMember.presence.game)
+     log(`${newMember.user.username}: ${newMember.presence.game.name}`);
+     });*/
     client.on('message', msg => {
         /*if (msg.author.bot) {
          return;
          }*/
         if (msg.author.id === "159985870458322944") {
             msg.reply("Go away Mee6")
-                .then(message => console.log(`Sent message: ${message.content}`))
+                .then(message => log(`Sent message: ${message.content}`))
                 .catch(console.error);
         }
         if (msg.isMentioned(client.user)) {
-            if (!killCleverbot) {
+
+            msg.channel.sendFile("https://media.giphy.com/media/l3UcvawxYUTWRpeMw/giphy.gif")
+                .then((value) => log(value))
+                .catch(console.error);
+            /**if (!killCleverbot) {
                 let messageToAsk = msg.content.replace(/[<][@]([0-9])+[>]/g, "").trim();
                 log("Other bot: " + messageToAsk);
                 cbot.ask(messageToAsk, function (err, response) {
                     if (err) {
+                        log("Here?");
                         log(err);
                         return;
                     }
@@ -93,7 +110,7 @@ module.exports = function (db) {
 
                 });
                 return;
-            }
+            }*/
         }
         checkCmd(msg);
     });
@@ -432,7 +449,27 @@ module.exports = function (db) {
                 }).catch(console.error);
 
             }
+        },
+        "giphy": {
+            argsDesc: false,
+            desc: "Giphy fun",
+            process: function (bot, msg, args) {
+                giphy.search({q: args, limit: 1}, (err, res) => {
+                    if (err)
+                        log(err);
+                    else {
+                        if (res.data.length > 0) {
+                            msg.delete();
+                            msg.channel.sendFile(res.data[0].images.downsized_medium.url)
+                                .then(message => log(`Sent message: ${message.content}`))
+                                .catch(console.error);
+
+                        }
+                    }
+                })
+            }
         }
+
     };
 
     function searchAndQueue(bot, msg, args, conn) {
@@ -553,7 +590,7 @@ module.exports = function (db) {
             return;
         }
         const words = msg.content.split(" ");
-        if (words[0].charAt(0) != '!') {
+        if (words[0].charAt(0) !== '!') {
             return;
         }
         const cmd = commands[words[0].substring(1)];
@@ -576,7 +613,7 @@ module.exports = function (db) {
 
     function checkEnv() {
         if (!process.env.BOT_TOKEN) {
-            logErr('ENV var JEFFYPOO_BOT_TOKEN not defined.');
+            logErr('ENV var MATRIXBOT_BOT_TOKEN not defined.');
             process.exit(-2);
         }
         if (!process.env.YOUTUBE_API_KEY) {

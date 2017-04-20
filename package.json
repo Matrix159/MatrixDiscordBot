@@ -7,6 +7,8 @@
     "cleverbot.io": "^1.0.4",
     "discord.js": "latest",
     "firebase": "^3.6.5",
+    "giphy-api": "^1.2.5",
+    "jsonfile": "^2.4.0",
     "moment": "^2.17.0",
     "mongodb": "^2.2.20",
     "node-opus": "latest",
