@@ -489,10 +489,8 @@ module.exports = function (db) {
                             queue.addVideo(new YoutubeVideo(vidUrl, info));
                             if (!(queue in queueList)) {
                                 queueList.push(queue);
-                                playNext(queue.guildID);
-
                             }
-                            else if (!queue.voiceStreamDispatcher) {
+                            if (!queue.voiceStreamDispatcher) {
                                 playNext(msg.guild.id);
                             }
                             msg.reply('Queued.');
