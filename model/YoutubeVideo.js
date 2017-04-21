@@ -19,7 +19,7 @@ class YoutubeVideo {
     }
     length()
     {
-        var secs = this.info.lengthSeconds || this.info.length_seconds;
+        let secs = this.info.lengthSeconds || this.info.length_seconds;
         console.log(`length(): secs = ${secs}`);
         return moment().seconds(secs).format('mm:ss');
     }

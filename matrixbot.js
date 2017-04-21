@@ -6,10 +6,6 @@ module.exports = function (db) {
     const client = new Discord.Client();
     // File system
     const fs = require('fs');
-    const jsonfile = require('jsonfile');
-    const sessionFile = './session.json';
-    const session = jsonfile.readFileSync(sessionFile);
-    log(session);
     // Youtube downloader
     const ytdl = require('ytdl-core');
     // Used for http requests
@@ -19,32 +15,20 @@ module.exports = function (db) {
     const giphy = require('giphy-api')('dc6zaTOxFJmzC');
     // Used for parsing urls
     const url = require('url');
-    const cleverbot = require("cleverbot.io");
-    const cbot = new cleverbot("LpxSxzKNawYCf7wQ", "f6C1KgLdIoIsej6XRZdiB7UCXqm8K61O");
-    let sessionname = session.sessionName;
-    cbot.setNick(sessionname);
-    function log(msg) {
-        console.log(msg);
-    }
 
-    function logErr(msg, err = false) {
-        console.error(`${msg} ${err || ''}`);
-    }
-
-    log("MatrixBot ver " + ver);
+    log("MatrixBot ver: " + ver);
     checkEnv();
 
     // Model for a youtube video
+    let SongQueue = require('./model/SongQueue.js');
     let YoutubeVideo = require('./model/YoutubeVideo.js');
-
     let boundTextChannel;
     let boundVoiceChannel;
     let voiceStreamDispatcher;
     let volumeLevel;
     let skipVotes = 0;
     // Queue for youtube videos
-    let playQueue = [];
-    let killCleverbot = false;
+    let queueList = [];
     let database = db;
     let botNames = [];
     database.getNames().then((nameArray) => botNames = nameArray).catch(console.error);
@@ -52,10 +36,6 @@ module.exports = function (db) {
     client.on('ready', () => {
         log(`Logged in as ${client.user.username}#${client.user.discriminator} (${client.readyAt})`);
         client.syncGuilds();
-        cbot.create((err, session) => {
-            log("Created " + session);
-        });
-
     });
     /*client.on("presenceUpdate", (oldMember, newMember) => {
      if(newMember.presence.game)
@@ -173,29 +153,45 @@ module.exports = function (db) {
             desc: "Searches youtube for a song and plays it.",
             process: function (bot, msg, args) {
                 log(`play: '${args.trim()}'`);
-                if (boundTextChannel != msg.channel) {
-                    log(`Binding text channel to '${msg.channel.name}'`);
-                    boundTextChannel = msg.channel;
+
+                for (let item of queueList) {
+                    if (item.guildID === msg.guild.id) {
+                        item.boundTextChannel = msg.channel;
+                        if (item.boundVoiceChannel && msg.member.voiceChannel !== item.boundVoiceChannel) {
+                            msg.reply(`I'm already playing music in '${item.boundVoiceChannel.name}'`);
+                            return;
+                        }
+                        if (item.boundVoiceChannel) {
+                            searchAndQueue(bot, msg, args, item);
+                            return;
+                        }
+                        else {
+                            const channel = msg.member.voiceChannel;
+                            if (channel && channel.joinable) {
+                                log(`Joining voice channel '${channel.name}'...`);
+                                channel.join()
+                                    .then(conn => {
+                                        item.boundVoiceChannel = channel;
+                                        log(`Joined '${boundVoiceChannel.name}'.`);
+                                        searchAndQueue(bot, msg, args, item);
+                                    })
+                                    .catch(console.error);
+                            }
+                        }
+                    }
                 }
-                if (boundVoiceChannel && msg.member.voiceChannel != boundVoiceChannel) {
-                    msg.reply(`I'm already playing music in '${boundVoiceChannel.name}'`);
-                    return;
-                } else if (boundVoiceChannel) {
-                    searchAndQueue(bot, msg, args, boundVoiceChannel.connection);
-                    return;
-                }
+                let songQueue = new SongQueue(msg.channel, msg.guild.id);
                 const channel = msg.member.voiceChannel;
                 if (channel && channel.joinable) {
                     log(`Joining voice channel '${channel.name}'...`);
                     channel.join()
                         .then(conn => {
-                            boundVoiceChannel = channel;
-                            log(`Joined '${boundVoiceChannel.name}'.`);
-                            searchAndQueue(bot, msg, args, conn);
+                            songQueue.boundVoiceChannel = channel;
+                            log(`Joined '${channel.name}'.`);
+                            searchAndQueue(bot, msg, args, songQueue);
                         })
                         .catch(console.error);
                 }
-
             }
         },
         "stop": {
@@ -206,7 +202,7 @@ module.exports = function (db) {
                 if (voiceStreamDispatcher) {
                     msg.reply('Stopping...');
                 }
-                playQueue = [];
+                queueList = [];
                 leaveVoiceChannel();
             }
         },
@@ -472,7 +468,7 @@ module.exports = function (db) {
 
     };
 
-    function searchAndQueue(bot, msg, args, conn) {
+    function searchAndQueue(bot, msg, args, queue) {
         const searchURL = getYoutubeSearchURL(args);
         msg.reply('Searching...');
         request(searchURL, (err, resp) => {
@@ -487,15 +483,20 @@ module.exports = function (db) {
                         log(`video URL = ${vidUrl}`);
                         getVideoInfo(vidUrl, (err, info) => {
                             if (err) {
-                                logErr("error getting video metadata", err);
+                                console.error(err);
                                 return;
                             }
-                            playQueue.push(new YoutubeVideo(vidUrl, info));
-                            msg.reply('Queued.');
-                            log(`queued video (${playQueue.length} songs in queue)`);
-                            if (!voiceStreamDispatcher) {
-                                playNext();
+                            queue.addVideo(new YoutubeVideo(vidUrl, info));
+                            if (!(queue in queueList)) {
+                                queueList.push(queue);
+                                playNext(queue.guildID);
+
                             }
+                            else if (!queue.voiceStreamDispatcher) {
+                                playNext(msg.guild.id);
+                            }
+                            msg.reply('Queued.');
+                            log(`queued video (${queueList.length} songs in queue)`);
                         });
                         return;
                     }
@@ -513,26 +514,29 @@ module.exports = function (db) {
         });
     }
 
-    function playNext() {
-        let next = playQueue.shift();
-        if (next) {
-            log(`playNext(): preparing track:\n${next.logString()}`);
-            const title = next.title();
-            const author = next.author();
-            const length = next.length();
-            const link = next.link();
-            const stream = ytdl.downloadFromInfo(next.info, {audioonly: true});
-            if (!volumeLevel) {
-                volumeLevel = .25;
+    function playNext(guildID) {
+        for (let item of queueList) {
+            if (item.guildID === guildID) {
+                let next = item.queue.shift();
+                if (next) {
+                    log(`playNext(): preparing track:\n${next.logString()}`);
+                    const title = next.title();
+                    const author = next.author();
+                    const length = next.length();
+                    const link = next.link();
+                    const stream = ytdl.downloadFromInfo(next.info, {audioonly: true});
+
+                    item.voiceStreamDispatcher = item.boundVoiceChannel.connection.playStream(stream, {volume: item.volumeLevel});
+                    item.voiceStreamDispatcher.once('end', () => {
+                        log(`track '${title}' ended`);
+                        item.voiceStreamDispatcher = undefined;
+                        playNext(guildID);
+                    });
+                    item.boundTextChannel.sendMessage(`\n**Now Playing** : ${title}\n**Length** : ${length}\n**Uploader** : ${author}\n**Link** : ${link}`);
+                }
             }
-            voiceStreamDispatcher = boundVoiceChannel.connection.playStream(stream, {volume: volumeLevel});
-            voiceStreamDispatcher.once('end', () => {
-                log(`track '${title}' ended`);
-                voiceStreamDispatcher = undefined;
-                playNext();
-            });
-            boundTextChannel.sendMessage(`\n**Now Playing** : ${title}\n**Length** : ${length}\n**Uploader** : ${author}\n**Link** : ${link}`);
         }
+
     }
 
     function pausePlayback(msg) {
@@ -595,7 +599,7 @@ module.exports = function (db) {
         }
         const cmd = commands[words[0].substring(1)];
         if (cmd) {
-            var args = msg.content.substring(words[0].length);
+            let args = msg.content.substring(words[0].length);
             cmd.process(client, msg, args);
         }
     }
@@ -613,12 +617,16 @@ module.exports = function (db) {
 
     function checkEnv() {
         if (!process.env.BOT_TOKEN) {
-            logErr('ENV var MATRIXBOT_BOT_TOKEN not defined.');
+            console.error('ENV var BOT_TOKEN not defined.');
             process.exit(-2);
         }
         if (!process.env.YOUTUBE_API_KEY) {
-            logErr('ENV var YOUTUBE_API_KEY not defined.');
+            console.error('ENV var YOUTUBE_API_KEY not defined.');
             process.exit(-2);
         }
     }
-}
+
+    function log(msg) {
+        console.log(msg);
+    }
+};
