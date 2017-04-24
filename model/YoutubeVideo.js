@@ -1,7 +1,7 @@
 /**
  * Created by Eldridge on 12/15/2016.
  */
-var moment = require('moment');
+const moment = require('moment');
 
 class YoutubeVideo {
     constructor(url, info)
@@ -15,13 +15,13 @@ class YoutubeVideo {
     }
     author()
     {
-        return this.info.author;
+        return this.info.author.user;
     }
     length()
     {
-        let secs = this.info.lengthSeconds || this.info.length_seconds;
+        let secs = this.info.length_seconds;
         console.log(`length(): secs = ${secs}`);
-        return moment().seconds(secs).format('mm:ss');
+        return moment().startOf('day').seconds(secs).format('H:mm:ss');
     }
     link()
     {

@@ -6,8 +6,7 @@ const MongoClient = require('mongodb').MongoClient
     , assert = require('assert');
 
 // Connection URL
-//const url = process.env.MONGODB_URI;
-const url = 'mongodb://heroku_f8vj90xv:envqke55oactljn4pme3nshe7f@ds153785.mlab.com:53785/heroku_f8vj90xv';
+const url = process.env.MONGODB_URI;
 let database;
 let collection;
 function setup(callback) {

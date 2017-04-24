@@ -10,6 +10,7 @@ class SongQueue {
         this.boundVoiceChannel = undefined;
         this.voiceStreamDispatcher = undefined;
         this.guildID = guildID;
+        this.skipVotes = 0;
         this.queue = [];
         this.volumeLevel = .25;
     }
