@@ -55,42 +55,6 @@ module.exports = function (db) {
             msg.channel.sendFile("https://media.giphy.com/media/l3UcvawxYUTWRpeMw/giphy.gif")
                 .then((value) => log(value))
                 .catch(console.error);
-            /**if (!killCleverbot) {
-                let messageToAsk = msg.content.replace(/[<][@]([0-9])+[>]/g, "").trim();
-                log("Other bot: " + messageToAsk);
-                cbot.ask(messageToAsk, function (err, response) {
-                    if (err) {
-                        log("Here?");
-                        log(err);
-                        return;
-                    }
-                    setTimeout(function (msg) {
-                        if (!killCleverbot) {
-                            if (response.toLowerCase().includes("my name is ")) {
-                                let n = response.toLowerCase().search("my name is ");
-                                let array = response.toLowerCase().substring(n).trim().split(" ");
-                                if (array.length >= 4) {
-                                    let name = array[3];
-                                    name = name[0].toUpperCase() + name.substr(1);
-                                    name = name.replace(/[^a-zA-Z]+/g, '');
-                                    if (!botNames.includes(name)) {
-                                        botNames.push(name);
-                                        database.updateNames(botNames);
-                                        msg.guild.fetchMember("252878570274291712").then((guildMember) => guildMember.setNickname(name)).catch(console.error);
-                                        log(name);
-                                    }
-
-                                }
-                            }
-                            msg.reply(response)
-                                .then(message => console.log(`Sent message: ${message.content}`))
-                                .catch(console.error);
-                        }
-                    }, 3000, msg);
-
-                });
-                return;
-            }*/
         }
         checkCmd(msg);
     });
