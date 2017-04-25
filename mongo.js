@@ -2,8 +2,7 @@
  * Created by Eldridge on 1/12/2017.
  */
 
-const MongoClient = require('mongodb').MongoClient
-    , assert = require('assert');
+const MongoClient = require('mongodb').MongoClient;
 
 // Connection URL
 const url = process.env.MONGODB_URI;

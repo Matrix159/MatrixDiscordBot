@@ -4,3 +4,4 @@ node_modules/
 requesttest.js
 .env
 npm-debug.log
+/config.json

@@ -1,8 +1,8 @@
 module.exports = function (db) {
-    const ver = 0.01;
+    const config = require('./config.json');
     const YT_API_KEY = process.env.YOUTUBE_API_KEY;
     const BOT_TOKEN = process.env.BOT_TOKEN;
-    const Discord = require("discord.js");
+    const Discord = require('discord.js');
     const client = new Discord.Client();
     // File system
     const fs = require('fs');
@@ -10,30 +10,28 @@ module.exports = function (db) {
     const ytdl = require('ytdl-core');
     // Used for http requests
     const request = require('superagent');
-
     // Giphy
     const giphy = require('giphy-api')('dc6zaTOxFJmzC');
     // Used for parsing urls
     const url = require('url');
 
-    log("MatrixBot ver: " + ver);
+
     checkEnv();
 
-    // Model for a youtube video
+    // Models
     let SongQueue = require('./model/SongQueue.js');
     let YoutubeVideo = require('./model/YoutubeVideo.js');
-    let boundTextChannel;
-    let boundVoiceChannel;
     let voiceStreamDispatcher;
     let volumeLevel;
-    let skipVotes = 0;
     // Queue for youtube videos
     let queueList = [];
     let database = db;
     let botNames = [];
+    let guilds = {};
     database.getNames().then((nameArray) => botNames = nameArray).catch(console.error);
 
     client.on('ready', () => {
+        log("MatrixBot version: " + config.version);
         log(`Logged in as ${client.user.username}#${client.user.discriminator} (${client.readyAt})`);
         client.syncGuilds();
     });
@@ -42,6 +40,8 @@ module.exports = function (db) {
      log(`${newMember.user.username}: ${newMember.presence.game.name}`);
      });*/
     client.on('message', msg => {
+        if (!guilds[msg.guild.id])
+            guilds[msg.guild.id] = {id: msg.guild.id, msgc: "", queue: []};
         if (msg.author.bot) {
             return;
         }
@@ -51,6 +51,7 @@ module.exports = function (db) {
                 .then((value) => log(value))
                 .catch(console.error);
         }
+
         checkCmd(msg);
     });
 
@@ -62,38 +63,6 @@ module.exports = function (db) {
 
 
     const commands = {
-        "info": {
-            argsDesc: false,
-            desc: "Displays bot info.",
-            process: function (bot, msg, args) {
-                msg.channel.sendMessage("", {
-                    embed: {
-                        color: 16711680,
-                        author: {
-                            name: bot.user.username,
-                            icon_url: bot.user.avatarURL
-                        },
-                        //url: 'http://google.com',
-                        description: 'MatrixBot will kick your ass with amazing goodness.',
-                        fields: [
-                            {
-                                name: 'Version',
-                                value: 'Forever beta meta'
-                            },
-                            {
-                                name: 'Commands',
-                                value: 'Type !help to get a list of commands'
-                            },
-                            {
-                                name: 'Requests',
-                                value: 'You want something added to the bot? Pay Matrix159 $100 and he will consider it'
-                            }
-                        ],
-                        timestamp: new Date(),
-                    }
-                });
-            }
-        },
         "say": {
             argsDesc: "[message]",
             desc: "Speak as MatrixBot.",
@@ -235,9 +204,8 @@ module.exports = function (db) {
             desc: "Skips the current song.",
             process: function (bot, msg, args) {
                 let guildID = msg.guild.id;
-                for(let queue of queueList)
-                {
-                    if(queue.guildID === guildID) {
+                for (let queue of queueList) {
+                    if (queue.guildID === guildID) {
                         if (queue.voiceStreamDispatcher) {
                             queue.skipVotes += 1;
                             if (queue.skipVotes === 3) {
@@ -650,11 +618,28 @@ module.exports = function (db) {
         if (words[0].charAt(0) !== '!') {
             return;
         }
-        const cmd = commands[words[0].substring(1)];
+        const cmd = words[0].substring(1);
+        const args = words.slice(1);
         if (cmd) {
-            let args = msg.content.substring(words[0].length);
-            cmd.process(client, msg, args);
+            try {
+                delete require.cache[require.resolve(`./commands/${cmd}`)];
+                require(`./commands/${cmd}`).run(client, msg, args, guilds, db);
+            } catch (e) {
+                if (e.message.includes("Cannot find module") || e.message.includes("ENOENT")) return;
+                msg.channel.sendMessage({
+                    embed: {
+                        color: 16711680,
+                        title: `${cmd} failed`,
+                        description: `The command failed to run. The error has been logged.`
+                    }
+                });
+                console.log(`E: ${cmd} failed\n\n${e.message}\n${e.stack}`);
+            }
         }
+
+        /*let args = msg.content.substring(words[0].length);
+         cmd.process(client, msg, args);*/
+
     }
 
     function printCommands(msg) {
